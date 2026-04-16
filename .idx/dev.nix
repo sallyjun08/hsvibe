@@ -21,8 +21,9 @@
       enable = true;
       previews = {
         web = {
-          command = ["python3" "-m" "http.server" "$PORT" "--bind" "0.0.0.0"];
+          command = ["bash" "-c" "npm run dev -- --port $PORT --hostname 0.0.0.0"];
           manager = "web";
+          cwd = "/home/user/try";
         };
       };
     };
@@ -30,15 +31,12 @@
     workspace = {
       # Runs when a workspace is first created
       onCreate = {
-        # Example: install JS dependencies from NPM
-        # npm-install = "npm install";
-        # Open editors for the following files by default, if they exist:
-        default.openFiles = [ "style.css" "main.js" "index.html" ];
+        npm-install = "cd /home/user/try && npm install";
+        default.openFiles = [ "src/app/page.tsx" "src/app/globals.css" ];
       };
       # Runs when the workspace is (re)started
       onStart = {
-        # Example: start a background task to watch and re-build backend code
-        # watch-backend = "npm run watch-backend";
+        # Next.js dev server는 IDX 프리뷰가 자동으로 시작합니다
       };
     };
   };

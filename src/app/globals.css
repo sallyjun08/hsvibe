@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* 화성 바이브 브랜드 색상 */
+  --color-primary: #0055A5;
+  --color-primary-light: #3378c0;
+  --color-primary-dark: #003d7a;
+  --color-secondary: #FF6B00;
+  --color-secondary-light: #ff8c33;
+  --color-secondary-dark: #cc5500;
+
+  /* 기본 UI 색상 */
+  --color-background: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-border: #e5e7eb;
+  --color-foreground: #111827;
+  --color-muted: #6b7280;
+
+  /* 폰트 */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), "Pretendard", -apple-system, BlinkMacSystemFont, sans-serif;
+}
