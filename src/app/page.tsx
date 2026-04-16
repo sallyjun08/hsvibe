@@ -1,14 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/layout/Header";
 import KakaoMap from "@/components/map/KakaoMap";
+import { HWASEONG_SAMPLE_PLACES, CATEGORY_LABELS } from "@/components/map/samplePlaces";
 import Link from "next/link";
 
 const CATEGORIES = ["전체", "카페", "맛집", "산책로", "전시·문화", "야외활동", "숨겨진 명소"];
 
+const LABEL_TO_KEY = Object.fromEntries(
+  Object.entries(CATEGORY_LABELS).map(([k, v]) => [v, k])
+);
+
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("전체");
+
+  const filteredPlaces = useMemo(() => {
+    const categoryKey = LABEL_TO_KEY[activeCategory];
+    return HWASEONG_SAMPLE_PLACES.filter(
+      (p) => !categoryKey || p.category === categoryKey
+    );
+  }, [activeCategory]);
 
   return (
     <>
@@ -35,7 +47,7 @@ export default function Home() {
 
       {/* 지도 (나머지 화면 전체) */}
       <main className="flex-1 relative">
-        <KakaoMap activeCategory={activeCategory} />
+        <KakaoMap places={filteredPlaces} />
 
         {/* 장소 등록 플로팅 버튼 */}
         <Link

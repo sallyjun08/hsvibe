@@ -9,6 +9,7 @@ declare namespace kakao.maps {
     getCenter(): LatLng;
     getLevel(): number;
     panTo(latlng: LatLng): void;
+    getProjection(): MapProjection;
   }
 
   class LatLng {
@@ -90,11 +91,25 @@ declare namespace kakao.maps {
     clickable?: boolean;
   }
 
+  interface MapProjection {
+    coordsFromContainerPoint(point: Point): LatLng;
+    containerPointFromCoords(latlng: LatLng): Point;
+  }
+
   namespace services {
+    type Coord2AddressResult = Array<{
+      address: { address_name: string };
+      road_address?: { address_name: string } | null;
+    }>;
     class Geocoder {
       addressSearch(
         address: string,
         callback: (result: Array<{ x: string; y: string; address_name: string }>, status: string) => void
+      ): void;
+      coord2Address(
+        lng: number,
+        lat: number,
+        callback: (result: Coord2AddressResult, status: string) => void
       ): void;
     }
     const Status: { OK: string; ZERO_RESULT: string; ERROR: string };
