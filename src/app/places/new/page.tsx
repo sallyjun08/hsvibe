@@ -6,7 +6,7 @@ import Script from "next/script";
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPlace } from "@/lib/firebase/places";
-import type { PlaceCategory, MoodTag } from "@/types";
+import type { PlaceCategory, MoodTag, Accessibility, Parking } from "@/types";
 
 const CATEGORIES: { value: PlaceCategory; label: string }[] = [
   { value: "cafe", label: "☕ 카페" },
@@ -37,6 +37,8 @@ export default function NewPlacePage() {
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [tags, setTags] = useState<MoodTag[]>([]);
+  const [accessibility, setAccessibility] = useState<Accessibility>({ walking: 3, car: 3 });
+  const [parking, setParking] = useState<Parking>({ available: false, info: "" });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -107,6 +109,8 @@ export default function NewPlacePage() {
           authorId: user.uid,
           authorName: user.displayName ?? "익명",
           imageUrls: [],
+          accessibility,
+          parking: { available: parking.available, info: parking.info || undefined },
         },
         images
       );
@@ -238,6 +242,67 @@ export default function NewPlacePage() {
                     {mood.label}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* 접근성 점수 */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-3">접근성 점수</label>
+              <div className="flex flex-col gap-4 bg-surface rounded-xl p-4">
+                {(["walking", "car"] as const).map((type) => {
+                  const label = type === "walking" ? "🚶 뚜벅이 접근성" : "🚗 자차 편의성";
+                  const val = accessibility[type];
+                  return (
+                    <div key={type}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-foreground">{label}</span>
+                        <span className="text-sm font-bold text-primary">{val} / 5</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setAccessibility((prev) => ({ ...prev, [type]: n }))}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                              val >= n
+                                ? "bg-primary text-white border-primary"
+                                : "bg-white border-border text-muted"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 주차 정보 */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">주차 정보</label>
+              <div className="flex flex-col gap-3 bg-surface rounded-xl p-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={parking.available}
+                    onChange={(e) => setParking((p) => ({ ...p, available: e.target.checked }))}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <span className="text-sm text-foreground">주차 가능</span>
+                </label>
+                {parking.available && (
+                  <input
+                    type="text"
+                    value={parking.info}
+                    onChange={(e) => setParking((p) => ({ ...p, info: e.target.value }))}
+                    placeholder="예: 무료 주차장 200대, 유료 1시간 1,000원"
+                    className="w-full px-4 py-2.5 text-sm border border-border rounded-xl focus:outline-none focus:border-primary transition-colors bg-white"
+                    maxLength={100}
+                  />
+                )}
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 import { Timestamp } from "firebase/firestore";
 
-// 장소 카테고리
+// ─── 기본 열거형 ────────────────────────────────────────────────
+
 export type PlaceCategory =
   | "cafe"
   | "restaurant"
@@ -9,10 +10,8 @@ export type PlaceCategory =
   | "outdoor"
   | "hidden";
 
-// 이동수단
 export type TransportType = "walking" | "car";
 
-// 무드 태그
 export type MoodTag =
   | "romantic"
   | "calm"
@@ -21,7 +20,26 @@ export type MoodTag =
   | "solo"
   | "pet-friendly";
 
-// 장소
+// ─── 세부 타입 ───────────────────────────────────────────────────
+
+/** 접근성 점수 (1~5, 5가 최고) */
+export interface Accessibility {
+  walking: number; // 뚜벅이 접근성 (대중교통·도보)
+  car: number;     // 자차 편의성 (도로·주차)
+}
+
+/** 주차 정보 */
+export interface Parking {
+  available: boolean;
+  info?: string; // 예: "무료 주차장 200대", "유료 1시간 1,000원"
+}
+
+// ─── 장소 ───────────────────────────────────────────────────────
+
+/**
+ * Firestore: places/{placeId}
+ * Storage:   images/places/{placeId}/{filename}
+ */
 export interface Place {
   id: string;
   name: string;
@@ -32,6 +50,8 @@ export interface Place {
   lng: number;
   imageUrls: string[];
   tags: MoodTag[];
+  accessibility: Accessibility;
+  parking: Parking;
   authorId: string;
   authorName: string;
   likes: number;
@@ -39,7 +59,17 @@ export interface Place {
   updatedAt: Timestamp;
 }
 
-// 데이트 코스
+/** Firestore: places/{placeId}/likes/{userId} */
+export interface PlaceLike {
+  userId: string;
+  createdAt: Timestamp;
+}
+
+// ─── 데이트 코스 ─────────────────────────────────────────────────
+
+/**
+ * Firestore: courses/{courseId}
+ */
 export interface Course {
   id: string;
   title: string;
@@ -54,19 +84,19 @@ export interface Course {
   createdAt: Timestamp;
 }
 
-// 사용자
+// ─── 사용자 ─────────────────────────────────────────────────────
+
+/**
+ * Firestore: users/{userId}
+ * - userId = Firebase Auth UID
+ */
 export interface User {
   id: string;
   displayName: string;
   email: string;
   photoURL?: string;
+  bio?: string;
+  myPlaceIds: string[];   // 내가 등록한 장소 ID 목록
   createdAt: Timestamp;
-}
-
-// 찜 (좋아요)
-export interface Like {
-  userId: string;
-  targetId: string;
-  targetType: "place" | "course";
-  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }

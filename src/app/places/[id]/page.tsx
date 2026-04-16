@@ -62,7 +62,7 @@ export default function PlaceDetailPage() {
     setLiked(true);
     setLikeCount((c) => c + 1);
     try {
-      await likePlace(id);
+      await likePlace(user.uid, id);
     } catch {
       setLiked(false);
       setLikeCount((c) => c - 1);

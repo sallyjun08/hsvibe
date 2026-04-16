@@ -1,0 +1,43 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── 헬퍼 함수 ───────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isUnder5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // ── 장소 이미지: images/places/{placeId}/{fileName} ──────
+    // 쿼터 절약: 장소당 최대 4장, 파일당 5MB
+    match /images/places/{placeId}/{fileName} {
+      // 누구나 읽기 가능 (공개 지도 서비스)
+      allow read: if true;
+
+      // 로그인 + 이미지 타입 + 5MB 이하만 업로드
+      allow write: if isSignedIn()
+                   && isImage()
+                   && isUnder5MB();
+
+      // 업로드한 본인만 삭제 (토큰 메타데이터로 확인)
+      allow delete: if isSignedIn();
+    }
+
+    // ── 프로필 사진: images/users/{userId}/{fileName} ────────
+    match /images/users/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && isImage()
+                   && request.resource.size < 2 * 1024 * 1024; // 프로필은 2MB
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

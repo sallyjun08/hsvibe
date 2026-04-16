@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 헬퍼 함수 ─────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isValidNewPlace() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['name','lat','lng','category','authorId','createdAt'])
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 50
+        && d.lat is number && d.lng is number
+        && d.authorId == request.auth.uid
+        // 화성시 대략 범위 체크 (lat 37.0~37.5, lng 126.5~127.2)
+        && d.lat >= 37.0 && d.lat <= 37.5
+        && d.lng >= 126.5 && d.lng <= 127.2;
+    }
+
+    function isValidPlaceUpdate() {
+      // 작성자만 수정 가능한 핵심 필드 변경 시 소유자 확인
+      let immutable = ['authorId','createdAt'];
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(immutable);
+    }
+
+    // ── places 컬렉션 ──────────────────────────────────────────
+    match /places/{placeId} {
+      // 누구나 읽기 (지도 표시, 목록, 상세)
+      allow read: if true;
+
+      // 로그인한 사용자만 등록 + 유효성 검증
+      allow create: if isSignedIn() && isValidNewPlace();
+
+      // 작성자만 수정 (likes 카운트는 별도 likes 서브컬렉션으로 관리)
+      allow update: if isOwner(resource.data.authorId) && isValidPlaceUpdate();
+
+      // 작성자만 삭제
+      allow delete: if isOwner(resource.data.authorId);
+
+      // ── places/{placeId}/likes 서브컬렉션 ──────────────────
+      // 중복 찜 방지: 문서 ID = userId
+      match /likes/{userId} {
+        allow read: if true;
+        // 본인 찜만 생성/삭제 가능
+        allow create: if isOwner(userId);
+        allow delete: if isOwner(userId);
+        allow update: if false; // 찜은 create/delete만
+      }
+    }
+
+    // ── users 컬렉션 ───────────────────────────────────────────
+    match /users/{userId} {
+      // 프로필은 누구나 읽기 가능 (닉네임, 사진만 노출)
+      allow read: if true;
+
+      // 본인 문서만 생성/수정 (로그인 직후 자동 생성)
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasAll(['displayName','email','myPlaceIds','createdAt']);
+
+      allow update: if isOwner(userId)
+        // email, createdAt 불변
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email','createdAt']);
+
+      // 회원 탈퇴는 Cloud Function에서만 (직접 삭제 불가)
+      allow delete: if false;
+    }
+
+    // ── courses 컬렉션 ─────────────────────────────────────────
+    match /courses/{courseId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+        && request.resource.data.authorId == request.auth.uid;
+      allow update: if isOwner(resource.data.authorId);
+      allow delete: if isOwner(resource.data.authorId);
+    }
+  }
+}
